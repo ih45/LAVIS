@@ -45,7 +45,7 @@ class BlapQformer(BlapBase):
         # drop_path_rate=0,
         # use_grad_checkpoint=False,
         # vit_precision="fp16",
-        freeze_hsast=True,
+        freeze_audio=True,
         num_query_token=32,
         cross_attention_freq=2,
         embed_dim=256,
@@ -57,7 +57,7 @@ class BlapQformer(BlapBase):
 
         # TODO: 将 vit 替换为 hsast
         self.audio_encoder, self.ln_audio = self.init_audio_encoder()
-        if freeze_hsast:
+        if freeze_audio:
             for name, param in self.audio_encoder.named_parameters():
                 param.requires_grad = False
             self.audio_encoder = self.audio_encoder.eval()
@@ -87,7 +87,8 @@ class BlapQformer(BlapBase):
         waveform = samples["waveform"]
         text = samples["text_input"]
 
-        audio_embeds = self.ln_audio(self.audio_encoder(waveform))
+        audio_output_dict = self.audio_encoder(waveform)
+        audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
         audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
             waveform.device
         )
@@ -152,6 +153,7 @@ class BlapQformer(BlapBase):
             waveform.device
         )
 
+        # TODO: to be modified
         if "image_id" in samples.keys(): #coco retrieval finetuning
             image_ids = samples["image_id"].view(-1,1)
             image_ids_all = concat_all_gather(image_ids)
@@ -297,7 +299,8 @@ class BlapQformer(BlapBase):
             captions (list): A list of strings of length batch_size * num_captions.
         """
         waveform = samples["waveform"]
-        audio_embeds = self.ln_audio(self.audio_encoder(waveform))
+        audio_output_dict = self.audio_encoder(waveform)
+        audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
 
         if not use_nucleus_sampling:
             audio_embeds = audio_embeds.repeat_interleave(num_beams, dim=0)
@@ -335,7 +338,8 @@ class BlapQformer(BlapBase):
         return captions
 
     def forward_audio(self, waveform):
-        audio_embeds = self.ln_audio(self.audio_encoder(waveform))
+        audio_output_dict = self.audio_encoder(waveform)
+        audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
         audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
             waveform.device
         )
@@ -418,7 +422,8 @@ class BlapQformer(BlapBase):
             ), "Waveform is not provided for mode 'waveform' or 'multimodal'"
             # return query features
             with self.maybe_autocast():
-                audio_embeds_frozen = self.ln_audio(self.audio_encoder(waveform))
+                audio_output_dict = self.audio_encoder(waveform)
+                audio_embeds_frozen = self.ln_audio(audio_output_dict['latent_output'])
             audio_embeds_frozen = audio_embeds_frozen.float()
             audio_atts = torch.ones(
                 audio_embeds_frozen.size()[:-1], dtype=torch.long
@@ -458,7 +463,8 @@ class BlapQformer(BlapBase):
         elif mode == "multimodal":
             # return multimodel query features
             with self.maybe_autocast():
-                audio_embeds_frozen = self.ln_audio(self.audio_encoder(waveform))
+                audio_output_dict = self.audio_encoder(waveform)
+                audio_embeds_frozen = self.ln_audio(audio_output_dict['latent_output'])
             audio_embeds_frozen = audio_embeds_frozen.float()
             audio_atts = torch.ones(
                 audio_embeds_frozen.size()[:-1], dtype=torch.long
@@ -504,7 +510,7 @@ class BlapQformer(BlapBase):
         # drop_path_rate = cfg.get("drop_path_rate", 0)
         # use_grad_checkpoint = cfg.get("use_grad_checkpoint", False)
         # vit_precision = cfg.get("vit_precision", "fp16")
-        freeze_hsast = cfg.get("freeze_hsast", True)
+        freeze_audio = cfg.get("freeze_audio", True)
 
         max_txt_len = cfg.get("max_txt_len", 32)
 
@@ -514,7 +520,7 @@ class BlapQformer(BlapBase):
             # drop_path_rate=drop_path_rate,
             # use_grad_checkpoint=use_grad_checkpoint,
             # vit_precision=vit_precision,
-            freeze_hsast=freeze_hsast,
+            freeze_audio=freeze_audio,
             num_query_token=num_query_token,
             cross_attention_freq=cross_attention_freq,
             max_txt_len=max_txt_len,

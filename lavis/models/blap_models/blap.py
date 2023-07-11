@@ -99,6 +99,10 @@ class BlapBase(BaseModel):
             patch_stride=htsat_config.htsat_stride,
             num_heads=htsat_config.htsat_num_head
         )
+        file_path = '/mnt/wjr/HTS-Audio-Transformer/ckpt/HTSAT_AudioSet_Saved_1.ckpt'
+        state_dict = torch.load(file_path)
+        audio_encoder.load_state_dict(state_dict)
+
         ln_audio = LayerNorm(audio_encoder.num_features)
 
         return audio_encoder, ln_audio
@@ -124,7 +128,7 @@ class BlapBase(BaseModel):
         return msg
 
     # TODO: to be modified
-    def get_optimizer_params(self, weight_decay, lr_scale=1):
+    '''def get_optimizer_params(self, weight_decay, lr_scale=1):
 
         vit_num_layers = self.visual_encoder.get_num_layer()
         lr_scales = list(lr_scale ** (vit_num_layers + 1 - i) for i in range(vit_num_layers + 2))
@@ -167,7 +171,7 @@ class BlapBase(BaseModel):
         # import json
         # print("Param groups = %s" % json.dumps(parameter_group_names, indent=2))
         optim_params = list(parameter_group_vars.values())
-        return optim_params
+        return optim_params'''
 
     def _lemmatize(self, answers):
         def apply(answer):

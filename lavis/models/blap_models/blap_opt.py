@@ -107,7 +107,8 @@ class BlapOPT(BlapBase):
     def forward(self, samples):
         waveform = samples["waveform"]
         with self.maybe_autocast():
-            audio_embeds = self.ln_audio(self.audio_encoder(waveform))
+            audio_output_dict = self.audio_encoder(waveform)
+            audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
         audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
             waveform.device
         )
@@ -191,7 +192,8 @@ class BlapOPT(BlapBase):
         """
         waveform = samples["waveform"]
         with self.maybe_autocast():
-            audio_embeds = self.ln_audio(self.audio_encoder(waveform))
+            audio_output_dict = self.audio_encoder(waveform)
+            audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
             audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
                 waveform.device
             )
@@ -294,7 +296,8 @@ class BlapOPT(BlapBase):
     ):
         waveform = samples["waveform"]
         with self.maybe_autocast():
-            audio_embeds = self.ln_audio(self.audio_encoder(waveform))
+            audio_output_dict = self.audio_encoder(waveform)
+            audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
             audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
                 waveform.device
             )
