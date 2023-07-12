@@ -92,6 +92,8 @@ class ClothoCaptionBuilder(BaseDatasetBuilder):
                 if is_train
                 else self.text_processors["eval"]
             )
+            # choose one caption from five candidates
+            which_caption = ann_info.get(split).which_caption
 
             # annotation path
             ann_paths = ann_info.get(split).storage
@@ -121,7 +123,8 @@ class ClothoCaptionBuilder(BaseDatasetBuilder):
                 audio_processor=audio_processor,
                 text_processor=text_processor,
                 audio_root=audio_dir,
-                caption_paths=ann_paths
+                caption_paths=ann_paths,
+                which_caption=which_caption
             )
 
         return datasets

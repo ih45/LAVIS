@@ -32,7 +32,7 @@ class __DisplMixin:
 
 
 class AudioTextPairDataset(BaseDataset, __DisplMixin):
-    def __init__(self, audio_processor, text_processor, audio_root, caption_paths):
+    def __init__(self, audio_processor, text_processor, audio_root, caption_paths, which_caption):
         """
         audio_root (string): Root directory of audios (e.g. /mnt1/datasets/Clotho/clotho_audio_development/development/)
         caption_path (string): annotation file path (.csv)
@@ -43,6 +43,7 @@ class AudioTextPairDataset(BaseDataset, __DisplMixin):
         self.audio_processor = audio_processor
         self.audio_root = audio_root
         self.caption_paths = caption_paths
+        self.which_caption = which_caption # [caption_1|caption_2|caption_3|caption_4|caption_5]
 
         for caption_path in self.caption_paths:
             tmp_df = pd.read_csv(caption_path, encoding='utf-8')
@@ -53,20 +54,15 @@ class AudioTextPairDataset(BaseDataset, __DisplMixin):
 
     def __getitem__(self, index):
 
-        # TODO: 只适用于clotho, 不保证适用于其他数据集
+        # TODO: 不保证适用于其他数据集
         ann = self.annotation[index]
 
         audio_path = os.path.join(self.audio_root, ann["file_name"])
 
         waveform = self.audio_processor(audio_path)
-        caption_1 = self.text_processor(ann["caption_1"])
-        caption_2 = self.text_processor(ann["caption_2"])
-        caption_3 = self.text_processor(ann["caption_3"])
-        caption_4 = self.text_processor(ann["caption_4"])
-        caption_5 = self.text_processor(ann["caption_5"])
+        caption = self.text_processor(ann[self.which_caption])
 
-        return {"waveform": waveform, "caption_1": caption_1, "caption_2": caption_2,
-                "caption_3": caption_3, "caption_4": caption_4, "caption_5": caption_5}
+        return {"waveform": waveform, "text_input": caption}
 
     def set_processors(self, audio_processor, text_processor):
         self.audio_processor = audio_processor
