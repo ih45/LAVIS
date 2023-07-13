@@ -25,6 +25,7 @@ class BlapAudioProcessor(BaseProcessor):
     def __call__(self, item):
         y, _ = librosa.load(item, sr = self.sample_rate)
         y = self.pad_truncate_sequence(y, self.sample_rate * self.max_sec)
+        y = y.astype(np.float32)
         return y
     
     def pad_truncate_sequence(self, y, max_len):
