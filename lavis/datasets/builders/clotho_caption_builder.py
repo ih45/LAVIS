@@ -11,7 +11,7 @@ from lavis.common.registry import registry
 
 from lavis.datasets.builders.base_dataset_builder import BaseDatasetBuilder
 # from lavis.datasets.datasets.image_text_pair_datasets import ImageTextPairDataset
-from lavis.datasets.datasets.audio_text_pair_datasets import AudioTextPairDataset
+from lavis.datasets.datasets.clotho_caption_datasets import ClothoCaptionDataset, ClothoCapEvalDataset
 # from lavis.datasets.datasets.laion_dataset import LaionDataset
 from lavis.processors.base_processor import BaseProcessor
 
@@ -21,12 +21,13 @@ import lavis.common.utils as utils
 
 @registry.register_builder("clotho_caption")
 class ClothoCaptionBuilder(BaseDatasetBuilder):
-    train_dataset_cls = AudioTextPairDataset
+    train_dataset_cls = ClothoCaptionDataset
+    eval_dataset_cls = ClothoCapEvalDataset
 
     DATASET_CONFIG_DICT = {"default": "configs/datasets/clotho/defaults_caption.yaml"}
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cfg=None):
+        super().__init__(cfg=cfg)
 
         self.audio_processors = {"train": BaseProcessor(), "eval": BaseProcessor()}
 
@@ -51,7 +52,7 @@ class ClothoCaptionBuilder(BaseDatasetBuilder):
             audio_train_cfg = audio_proc_cfg.get("train")
             audio_eval_cfg = audio_proc_cfg.get("eval")
 
-            self.audio_processors["train"] = self._build_proc_from_cfg(audio_train_cfg) # TODO: 待添加processor
+            self.audio_processors["train"] = self._build_proc_from_cfg(audio_train_cfg)
             self.audio_processors["eval"] = self._build_proc_from_cfg(audio_eval_cfg)
 
         if txt_proc_cfg is not None:
@@ -108,7 +109,7 @@ class ClothoCaptionBuilder(BaseDatasetBuilder):
             ann_paths = abs_ann_paths
 
             # audio data storage path
-            audio_dir = audio_info.storage
+            audio_dir = audio_info.get(split).storage
 
             if not os.path.isabs(audio_dir):
                 # vis_path = os.path.join(utils.get_cache_path(), vis_path)
