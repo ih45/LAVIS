@@ -21,7 +21,7 @@ from torchlibrosa.augmentation import SpecAugmentation
 from itertools import repeat
 from typing import List
 from .layers import PatchEmbed, Mlp, DropPath, trunc_normal_, to_2tuple
-from utils import do_mixup, interpolate
+from .utils import do_mixup, interpolate
 
 
 # below codes are based and referred from https://github.com/microsoft/Swin-Transformer
@@ -625,6 +625,7 @@ class HTSAT_Swin_Transformer(nn.Module):
         #     output_dict = {'framewise_output': torch.sigmoid(fphxs), 
         #         'clipwise_output': torch.sigmoid(hxs)}
         #     return output_dict
+        audio_features = x
 
         if self.config.enable_tscam:
             # for x
@@ -641,7 +642,7 @@ class HTSAT_Swin_Transformer(nn.Module):
 
             # get latent_output
             latent_output = self.avgpool(torch.flatten(x,2))
-            latent_output = torch.flatten(latent_output, 1)
+            latent_output = torch.flatten(latent_output, 1)  # [B, num_features]
 
             # display the attention map, if needed
             if self.config.htsat_attn_heatmap:
@@ -685,13 +686,15 @@ class HTSAT_Swin_Transformer(nn.Module):
                 output_dict = {
                     'framewise_output': fpx, # already sigmoided
                     'clipwise_output': x,
-                    'latent_output': latent_output
+                    'latent_output': latent_output,
+                    'audio_features': audio_features
                 }
             else:
                 output_dict = {
                     'framewise_output': fpx, # already sigmoided
                     'clipwise_output': torch.sigmoid(x),
-                    'latent_output': latent_output
+                    'latent_output': latent_output,
+                    'audio_features': audio_features
                 }
            
         else:
@@ -706,12 +709,14 @@ class HTSAT_Swin_Transformer(nn.Module):
             fpx = torch.sum(fpx, dim = 2)
             fpx = interpolate(fpx.permute(0,2,1).contiguous(), 8 * self.patch_stride[1]) 
             x = self.avgpool(x.transpose(1, 2))  # B C 1
-            x = torch.flatten(x, 1)
+            x = torch.flatten(x, 1)  # [B, num_features]
             if self.num_classes > 0:
                 x = self.head(x)
                 fpx = self.head(fpx)
             output_dict = {'framewise_output': torch.sigmoid(fpx), 
-                'clipwise_output': torch.sigmoid(x)}
+                'clipwise_output': torch.sigmoid(x),
+                'audio_features': audio_features
+            }
         return output_dict
 
     def crop_wav(self, x, crop_size, spe_pos = None):
@@ -722,7 +727,8 @@ class HTSAT_Swin_Transformer(nn.Module):
                 crop_pos = random.randint(0, time_steps - crop_size - 1)
             else:
                 crop_pos = spe_pos
-            tx[i][0] = x[i, 0, crop_pos:crop_pos + crop_size,:]
+            end_pos = min(time_steps, crop_pos + crop_size)
+            tx[i][0] = x[i, 0, crop_pos:end_pos,:]
         return tx
 
     # Reshape the wavform to a img size, if you want to use the pretrained swin transformer model
@@ -793,15 +799,19 @@ class HTSAT_Swin_Transformer(nn.Module):
                     output_dicts.append(self.forward_features(tx))
                 clipwise_output = torch.zeros_like(output_dicts[0]["clipwise_output"]).float().to(x.device)
                 framewise_output = torch.zeros_like(output_dicts[0]["framewise_output"]).float().to(x.device)
+                audio_features = torch.zeros_like(output_dicts[0]["audio_features"]).float().to(x.device)
                 for d in output_dicts:
                     clipwise_output += d["clipwise_output"]
                     framewise_output += d["framewise_output"]
+                    audio_features += d["audio_features"]
                 clipwise_output  = clipwise_output / len(output_dicts)
                 framewise_output = framewise_output / len(output_dicts)
+                audio_features = audio_features / len(output_dicts)
 
                 output_dict = {
                     'framewise_output': framewise_output, 
-                    'clipwise_output': clipwise_output
+                    'clipwise_output': clipwise_output,
+                    'audio_features': audio_features
                 }
         else:
             if x.shape[2] > self.freq_ratio * self.spec_size:
@@ -811,23 +821,28 @@ class HTSAT_Swin_Transformer(nn.Module):
                     output_dict = self.forward_features(x)
                 else:
                     # Change: Hard code here
+                    # ? 2 和 4 从哪来的?
                     overlap_size = (x.shape[2] - 1) // 4
                     output_dicts = []
-                    crop_size = (x.shape[2] - 1) // 2
+                    crop_size = min((x.shape[2] - 1) // 2, self.freq_ratio * self.spec_size)
                     for cur_pos in range(0, x.shape[2] - crop_size - 1, overlap_size):
                         tx = self.crop_wav(x, crop_size = crop_size, spe_pos = cur_pos)
                         tx = self.reshape_wav2img(tx)
                         output_dicts.append(self.forward_features(tx))
                     clipwise_output = torch.zeros_like(output_dicts[0]["clipwise_output"]).float().to(x.device)
                     framewise_output = torch.zeros_like(output_dicts[0]["framewise_output"]).float().to(x.device)
+                    audio_features = torch.zeros_like(output_dicts[0]["audio_features"]).float().to(x.device)
                     for d in output_dicts:
                         clipwise_output += d["clipwise_output"]
                         framewise_output += d["framewise_output"]
+                        audio_features += d["audio_features"]
                     clipwise_output  = clipwise_output / len(output_dicts)
                     framewise_output = framewise_output / len(output_dicts)
+                    audio_features = audio_features / len(output_dicts)
                     output_dict = {
                         'framewise_output': framewise_output, 
-                        'clipwise_output': clipwise_output
+                        'clipwise_output': clipwise_output,
+                        'audio_features': audio_features
                     }
             else: # this part is typically used, and most easy one
                 x = self.reshape_wav2img(x)
