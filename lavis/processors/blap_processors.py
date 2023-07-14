@@ -30,7 +30,11 @@ class BlapAudioProcessor(BaseProcessor):
     
     def pad_truncate_sequence(self, y, max_len):
         if len(y) < max_len:
-            return np.concatenate((y, np.zeros(max_len - len(y))))
+            repeat_cnt = max_len // len(y)
+            y = np.tile(y, repeat_cnt)
+            if len(y) < max_len:
+                y = np.concatenate((y, y[0 : max_len - len(y)]))
+            return y
         else:
             return y[0 : max_len]
         
