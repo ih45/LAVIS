@@ -40,6 +40,15 @@ from lavis.models.blip2_models.blip2_image_text_matching import Blip2ITM
 from lavis.models.blip2_models.blip2_t5_instruct import Blip2T5Instruct
 from lavis.models.blip2_models.blip2_vicuna_instruct import Blip2VicunaInstruct
 
+from lavis.models.blap_models.blap import BlapBase
+from lavis.models.blap_models.blap_opt import BlapOPT
+# from lavis.models.blap_models.blap_t5 import BlapT5
+from lavis.models.blap_models.blap_qformer import BlapQformer
+# from lavis.models.blap_models.blap_audio_text_matching import BlapITM
+
+# from lavis.models.blap_models.blap_t5_instruct import BlapT5Instruct
+# from lavis.models.blap_models.blap_vicuna_instruct import BlapVicunaInstruct
+
 from lavis.models.pnp_vqa_models.pnp_vqa import PNPVQA
 from lavis.models.pnp_vqa_models.pnp_unifiedqav2_fid import PNPUnifiedQAv2FiD
 from lavis.models.img2prompt_models.img2prompt_vqa import Img2PromptVQA
@@ -86,6 +95,13 @@ __all__ = [
     "VisionTransformerEncoder",
     "XBertLMHeadDecoder",
     "GPTDialogue",
+    "BlapQformer",
+    "BlapBase",
+    # "BlapITM",
+    "BlapOPT",
+    # "BlapT5",
+    # "BlapT5Instruct",
+    # "BlapVicunaInstruct",
 ]
 
 
