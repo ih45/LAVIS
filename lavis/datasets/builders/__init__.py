@@ -37,6 +37,7 @@ from lavis.datasets.builders.retrieval_builder import (
     Flickr30kBuilder,
 )
 from lavis.datasets.builders.dialogue_builder import AVSDDialBuilder
+from lavis.datasets.builders.clotho_caption_builder import ClothoCaptionBuilder
 
 from lavis.common.registry import registry
 
@@ -63,6 +64,7 @@ __all__ = [
     "VGCaptionBuilder",
     "VGVQABuilder",
     "AVSDDialBuilder",
+    "ClothoCaptionBuilder",
 ]
 
 
