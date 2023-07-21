@@ -23,6 +23,8 @@ from lavis.processors.gpt_processors import (
 )
 from lavis.processors.clip_processors import ClipImageTrainProcessor
 
+from lavis.processors.blap_processors import BlapAudioProcessor, BlapCaptionProcessor
+
 from lavis.common.registry import registry
 
 __all__ = [
@@ -39,6 +41,8 @@ __all__ = [
     # GPT
     "GPTVideoFeatureProcessor",
     "GPTDialogueProcessor",
+    "BlapAudioProcessor",
+    "BlapCaptionProcessor",
 ]
 
 
