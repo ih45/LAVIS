@@ -61,7 +61,7 @@ class ClothoCaptionDataset(BaseDataset, __DisplMixin):
         waveform = self.audio_processor(audio_path)
         caption = self.text_processor(ann[self.which_caption])
 
-        return {"waveform": waveform, "text_input": caption}
+        return {"file_name": ann["file_name"], "waveform": waveform, "text_input": caption}
 
     def set_processors(self, audio_processor, text_processor):
         self.audio_processor = audio_processor
