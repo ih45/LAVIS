@@ -88,7 +88,7 @@ class BlapQformer(BlapBase):
         text = samples["text_input"]
 
         audio_output_dict = self.audio_encoder(waveform)
-        audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
+        audio_embeds = self.ln_audio(audio_output_dict['audio_features'])
         audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
             waveform.device
         )
@@ -147,7 +147,8 @@ class BlapQformer(BlapBase):
         sim_t2i, _ = sim_t2q.max(-1)
         sim_t2i = sim_t2i / self.temp  # [batch_size, batch_size*num_gpu]
 
-        rank = dist.get_rank()
+        # rank = dist.get_rank()
+        rank = 0
         bs = waveform.size(0)
         targets = torch.linspace(rank * bs, rank * bs + bs - 1, bs, dtype=int).to(
             waveform.device
@@ -173,7 +174,8 @@ class BlapQformer(BlapBase):
         ###============== Image-text Matching ===================###
         text_input_ids_world = concat_all_gather(text_tokens.input_ids)
         text_attention_mask_world = concat_all_gather(text_tokens.attention_mask)
-        audio_embeds_world = all_gather_with_grad(audio_embeds)
+        # audio_embeds_world = all_gather_with_grad(audio_embeds)
+        audio_embeds_world = audio_embeds
         with torch.no_grad():
             if "image_id" in samples.keys():
                 mask = torch.eq(image_ids, image_ids_all.t())
@@ -300,7 +302,7 @@ class BlapQformer(BlapBase):
         """
         waveform = samples["waveform"]
         audio_output_dict = self.audio_encoder(waveform)
-        audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
+        audio_embeds = self.ln_audio(audio_output_dict['audio_features'])
 
         if not use_nucleus_sampling:
             audio_embeds = audio_embeds.repeat_interleave(num_beams, dim=0)
@@ -339,7 +341,7 @@ class BlapQformer(BlapBase):
 
     def forward_audio(self, waveform):
         audio_output_dict = self.audio_encoder(waveform)
-        audio_embeds = self.ln_audio(audio_output_dict['latent_output'])
+        audio_embeds = self.ln_audio(audio_output_dict['audio_features'])
         audio_atts = torch.ones(audio_embeds.size()[:-1], dtype=torch.long).to(
             waveform.device
         )
@@ -423,7 +425,7 @@ class BlapQformer(BlapBase):
             # return query features
             with self.maybe_autocast():
                 audio_output_dict = self.audio_encoder(waveform)
-                audio_embeds_frozen = self.ln_audio(audio_output_dict['latent_output'])
+                audio_embeds_frozen = self.ln_audio(audio_output_dict['audio_features'])
             audio_embeds_frozen = audio_embeds_frozen.float()
             audio_atts = torch.ones(
                 audio_embeds_frozen.size()[:-1], dtype=torch.long
@@ -464,7 +466,7 @@ class BlapQformer(BlapBase):
             # return multimodel query features
             with self.maybe_autocast():
                 audio_output_dict = self.audio_encoder(waveform)
-                audio_embeds_frozen = self.ln_audio(audio_output_dict['latent_output'])
+                audio_embeds_frozen = self.ln_audio(audio_output_dict['audio_features'])
             audio_embeds_frozen = audio_embeds_frozen.float()
             audio_atts = torch.ones(
                 audio_embeds_frozen.size()[:-1], dtype=torch.long
