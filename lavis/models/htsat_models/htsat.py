@@ -766,8 +766,8 @@ class HTSAT_Swin_Transformer(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor, mixup_lambda = None, infer_mode = False):# out_feat_keys: List[str] = None):
-        x = self.spectrogram_extractor(x)   # (batch_size, 1, time_steps, freq_bins)
-        x = self.logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
+        # x = self.spectrogram_extractor(x)   # (batch_size, 1, time_steps, freq_bins)
+        # x = self.logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
         
         
         x = x.transpose(1, 3)
