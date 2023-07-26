@@ -17,8 +17,14 @@ datasets:
           name: "blap_audio_train"
           sample_rate: 32000
           max_sec: 30
+        eval:
+          name: "blap_audio_eval"
+          sample_rate: 32000
+          max_sec: 30
     text_processor:
         train:
+          name: "blap_caption"
+        eval:
           name: "blap_caption"
 #     build_info:
 #         images:
@@ -54,10 +60,11 @@ run:
   output_dir: "output/BLAP/Pretrain_stage1"
 
   amp: True
-  resume_ckpt_path: null
+  resume_ckpt_path: "/mnt/wjr/LAVIS/lavis/output/BLAP/Pretrain_stage1/20230720133/checkpoint_4.pth"
 
   evaluate: False 
   train_splits: ["train"]
+  valid_splits: ["val"]
 
   device: "cuda"
   world_size: 1
