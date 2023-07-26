@@ -99,7 +99,7 @@ class BlapBase(BaseModel):
             patch_stride=htsat_config.htsat_stride,
             num_heads=htsat_config.htsat_num_head
         )
-        file_path = '/mnt/wjr/HTS-Audio-Transformer/ckpt/HTSAT_AudioSet_Saved_1.ckpt'
+        file_path = '/mnt/wjr/LAVIS/lavis/models/htsat_models/ckpt/HTSAT_AudioSet_Saved_1.ckpt'
         state_dict = torch.load(file_path)
         audio_encoder.load_state_dict(state_dict)
 
@@ -127,11 +127,10 @@ class BlapBase(BaseModel):
 
         return msg
 
-    # TODO: to be modified
-    '''def get_optimizer_params(self, weight_decay, lr_scale=1):
+    def get_optimizer_params(self, weight_decay, lr_scale=1):
 
-        vit_num_layers = self.visual_encoder.get_num_layer()
-        lr_scales = list(lr_scale ** (vit_num_layers + 1 - i) for i in range(vit_num_layers + 2))
+        # vit_num_layers = self.visual_encoder.get_num_layer()
+        # lr_scales = list(lr_scale ** (vit_num_layers + 1 - i) for i in range(vit_num_layers + 2))
 
         parameter_group_names = {}
         parameter_group_vars = {}
@@ -145,17 +144,18 @@ class BlapBase(BaseModel):
             else:
                 group_name = "decay"
                 this_weight_decay = weight_decay
-            if 'visual_encoder' in name:
-                layer_id = self.visual_encoder.get_num_layer(name.replace('visual_encoder.',''))
-                group_name = "vit_layer_%d_%s" % (layer_id, group_name)
-            else:
-                layer_id = None
+            # if 'visual_encoder' in name:
+            #     layer_id = self.visual_encoder.get_num_layer(name.replace('visual_encoder.',''))
+            #     group_name = "vit_layer_%d_%s" % (layer_id, group_name)
+            # else:
+            #     layer_id = None
 
             if group_name not in parameter_group_names:
-                if layer_id is not None:
-                    scale = lr_scales[layer_id]
-                else:
-                    scale = 1
+                # if layer_id is not None:
+                #     scale = lr_scales[layer_id]
+                # else:
+                #     scale = 1
+                scale = 1
                 parameter_group_names[group_name] = {
                     "weight_decay": this_weight_decay,
                     "params": [],
@@ -171,7 +171,7 @@ class BlapBase(BaseModel):
         # import json
         # print("Param groups = %s" % json.dumps(parameter_group_names, indent=2))
         optim_params = list(parameter_group_vars.values())
-        return optim_params'''
+        return optim_params
 
     def _lemmatize(self, answers):
         def apply(answer):

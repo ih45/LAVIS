@@ -6,12 +6,44 @@
 """
 
 import re
+from typing import Any
 
 from lavis.common.registry import registry
 from lavis.processors.base_processor import BaseProcessor
 from omegaconf import OmegaConf
 import librosa
 import numpy as np
+import torch.nn as nn
+import torch
+from torchlibrosa.stft import Spectrogram, LogmelFilterBank
+
+class GenLogmel(nn.Module):
+    def __init__(self):
+        
+        super().__init__()
+        self.spectrogram_extractor = Spectrogram(n_fft=1024, hop_length=320, 
+            win_length=1024, window='hann', center=True, pad_mode='reflect', 
+            freeze_parameters=True)
+        # Logmel feature extractor
+        self.logmel_extractor = LogmelFilterBank(sr=32000, n_fft=1024, 
+            n_mels=64, fmin=50, fmax=14000, ref=1.0, amin=1e-10, top_db=None, 
+            freeze_parameters=True)
+        
+        file_path = '/mnt/wjr/LAVIS/lavis/models/htsat_models/ckpt/gen_logmel.ckpt'
+        state_dict = torch.load(file_path)
+
+        # print("================", state_dict.keys(), "=====================")
+        self.load_state_dict(state_dict)
+
+    def forward(self, x):
+        x = self.spectrogram_extractor(x)   # (batch_size, 1, time_steps, freq_bins)
+        x = self.logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
+        if torch.any(torch.isnan(x)).item():
+            print("true")
+
+        return x
+        
+
 
 @registry.register_processor("blap_audio_train")
 @registry.register_processor("blap_audio_eval")
@@ -22,10 +54,13 @@ class BlapAudioProcessor(BaseProcessor):
         self.sample_rate = sample_rate
         self.max_sec = max_sec
 
+        self.gen_logmel = GenLogmel()
+
     def __call__(self, item):
         y, _ = librosa.load(item, sr = self.sample_rate)
         y = self.pad_truncate_sequence(y, self.sample_rate * self.max_sec)
-        y = y.astype(np.float32)
+        y = torch.from_numpy(y.astype(np.float32)).unsqueeze(0)
+        y = self.gen_logmel(y).squeeze(0)
         return y
     
     def pad_truncate_sequence(self, y, max_len):
