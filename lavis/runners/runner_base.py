@@ -394,7 +394,7 @@ class RunnerBase:
             if self.evaluate_only:
                 break
 
-            dist.barrier()
+            # dist.barrier()
 
         # testing phase
         test_epoch = "best" if len(self.valid_splits) > 0 else cur_epoch
@@ -592,49 +592,4 @@ class RunnerBase:
         try:
             model.load_state_dict(checkpoint["model"])
         except RuntimeError as e:
-            logging.warning(
-                """
-                Key mismatch when loading checkpoint. This is expected if only part of the model is saved.
-                Trying to load the model with strict=False.
-                """
-            )
-            model.load_state_dict(checkpoint["model"], strict=False)
-        return model
-
-    def _load_checkpoint(self, url_or_filename):
-        """
-        Resume from a checkpoint.
-        """
-        if is_url(url_or_filename):
-            cached_file = download_cached_file(
-                url_or_filename, check_hash=False, progress=True
-            )
-            checkpoint = torch.load(cached_file, map_location=self.device)
-        elif os.path.isfile(url_or_filename):
-            checkpoint = torch.load(url_or_filename, map_location=self.device)
-        else:
-            raise RuntimeError("checkpoint url or path is invalid")
-
-        state_dict = checkpoint["model"]
-        self.unwrap_dist_model(self.model).load_state_dict(state_dict)
-
-        self.optimizer.load_state_dict(checkpoint["optimizer"])
-        if self.scaler and "scaler" in checkpoint:
-            self.scaler.load_state_dict(checkpoint["scaler"])
-
-        self.start_epoch = checkpoint["epoch"] + 1
-        logging.info("Resume checkpoint from {}".format(url_or_filename))
-
-    @main_process
-    def log_stats(self, stats, split_name):
-        if isinstance(stats, dict):
-            log_stats = {**{f"{split_name}_{k}": v for k, v in stats.items()}}
-            with open(os.path.join(self.output_dir, "log.txt"), "a") as f:
-                f.write(json.dumps(log_stats) + "\n")
-        elif isinstance(stats, list):
-            pass
-
-    @main_process
-    def log_config(self):
-        with open(os.path.join(self.output_dir, "log.txt"), "a") as f:
-            f.write(json.dumps(self.config.to_dict(), indent=4) + "\n")
+            loggi
