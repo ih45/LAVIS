@@ -1,0 +1,1 @@
+python train.py --cfg-path lavis/projects/blap/train/pretrain_stage1.yaml

@@ -96,11 +96,13 @@ class ClothoCapEvalDataset(BaseDataset, __DisplMixin):
         audio_path = os.path.join(self.audio_root, ann["file_name"])
 
         waveform = self.audio_processor(audio_path)
+        caption = self.text_processor(ann[self.which_caption])
 
         return {
             "file_name": ann["file_name"],
             "waveform": waveform,
-            "instance_id": ann["instance_id"]
+            "instance_id": ann["instance_id"],
+            "text_input": caption
         }
 
     def set_processors(self, audio_processor, text_processor):
